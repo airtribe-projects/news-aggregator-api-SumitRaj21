@@ -1,11 +1,15 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.model.js');
+const User = require('../models/user.model');
 const ApiError = require('../utils/apiError');
 const asyncHandler = require('../utils/asyncHandler');
 
-exports.register = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+exports.signup = asyncHandler(async (req, res) => {
+  const { name, email, password, preferences = [] } = req.body;
+
+  if (!email || !password || !name) {
+    throw new ApiError(400, 'Missing required fields');
+  }
 
   if (await User.findOne({ email })) {
     throw new ApiError(409, 'User already exists');
@@ -13,9 +17,14 @@ exports.register = asyncHandler(async (req, res) => {
 
   const hashed = await bcrypt.hash(password, 10);
 
-  await User.create({ name, email, password: hashed });
+  await User.create({
+    name,
+    email,
+    password: hashed,
+    preferences
+  });
 
-  res.status(201).json({ message: 'User registered' });
+  res.status(200).json({ message: 'Signup successful' });
 });
 
 exports.login = asyncHandler(async (req, res) => {
@@ -27,9 +36,7 @@ exports.login = asyncHandler(async (req, res) => {
   const match = await bcrypt.compare(password, user.password);
   if (!match) throw new ApiError(401, 'Invalid credentials');
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
-  });
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
-  res.json({ token });
+  res.status(200).json({ token });
 });

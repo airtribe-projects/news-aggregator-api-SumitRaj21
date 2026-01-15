@@ -1,17 +1,19 @@
-const User = require('../models/User.model');
+const User = require('../models/user.model');
 const asyncHandler = require('../utils/asyncHandler');
 
 exports.getPreferences = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id);
-  res.json(user.preferences);
+  res.status(200).json({ preferences: user.preferences });
 });
 
 exports.updatePreferences = asyncHandler(async (req, res) => {
+  const { preferences } = req.body;
+
   const user = await User.findByIdAndUpdate(
     req.user.id,
-    { preferences: req.body },
+    { preferences },
     { new: true }
   );
 
-  res.json(user.preferences);
+  res.status(200).json({ preferences: user.preferences });
 });
